@@ -1,6 +1,7 @@
 package main
 
 func main() {
-	image := ImageLoad("data/test1.png", -1)
-	image.Save("data/test1gray.png")
+	image := ImageLoad("data/test2.png", -1)
+	BinAdaptiveFull(image)
+	image.Save("data/test2adfull.png")
 }

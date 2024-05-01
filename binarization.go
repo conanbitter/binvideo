@@ -116,14 +116,16 @@ func BinAdaptiveLocal2(image *ImageData) {
 	image.Data = newImage
 }
 
-func BinMask(image *ImageData, mask *ImageData) {
+func BinMask(image *ImageData, mask *ImageData) *ImageData {
+	result := NewImage(image.Width, image.Height)
 	for i, point := range image.Data {
 		if point > mask.Data[i] {
-			image.Data[i] = 1.0
+			result.Data[i] = 1.0
 		} else {
-			image.Data[i] = 0.0
+			result.Data[i] = 0.0
 		}
 	}
+	return result
 }
 
 func BinMask2(image *ImageData, mask *ImageData, bin *ImageData) {
@@ -186,12 +188,8 @@ func GetAccentMask(image *ImageData, kernelRadius int, k float64, amplitude floa
 	}
 }
 
-func BinMaskAccent(image *ImageData, mask *ImageData, accent *ImageData) {
+func ApplyAccent(image *ImageData, accent *ImageData) {
 	for i, point := range image.Data {
-		if point*accent.Data[i] > mask.Data[i] {
-			image.Data[i] = 1.0
-		} else {
-			image.Data[i] = 0.0
-		}
+		image.Data[i] = point * accent.Data[i]
 	}
 }

@@ -191,6 +191,25 @@ func (chain EncodingChain) Decode(prevMono []ImageBlock) []ImageBlock {
 	return result
 }
 
+func (chain EncodingChain) DecodeGray(curGray []ImageBlock, prevGray []ImageBlock) []ImageBlock {
+	result := make([]ImageBlock, 0, len(curGray))
+	ind := 0
+	for _, block := range chain {
+		if block.BlockType == ENC_SKIP {
+			for i := 0; i < block.Count; i++ {
+				result = append(result, prevGray[ind])
+				ind++
+			}
+		} else {
+			for i := 0; i < block.Count; i++ {
+				result = append(result, curGray[ind])
+				ind++
+			}
+		}
+	}
+	return result
+}
+
 func GetSizeInBlocks(image *ImageData) (int, int) {
 	return int(math.Ceil(float64(image.Width) / 4)), int(math.Ceil(float64(image.Height) / 4))
 }

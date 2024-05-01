@@ -3,6 +3,7 @@ module binvideo
 go 1.21.5
 
 require (
+	github.com/dustin/go-humanize v1.0.1
 	github.com/schollz/progressbar/v3 v3.14.2
 	golang.org/x/image v0.15.0
 )

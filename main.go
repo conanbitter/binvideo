@@ -2,6 +2,21 @@ package main
 
 import "fmt"
 
+func LoadFrame(filename string, noise *ImageData, curve []int) (gray []ImageBlock, mono []ImageBlock) {
+	grayImage := ImageLoad(filename, -1)
+	accent := GetAccentMask(grayImage, 2, 0.2, 0.5)
+	grayImage.GammaCorrection(2.4)
+	ApplyAccent(grayImage, accent)
+	grayBlocks := ImageToBlocks(grayImage)
+	gray = ApplyCurve(grayBlocks, curve)
+	monoImage := BinMask(grayImage, noise)
+	monoBlocks := ImageToBlocks(monoImage)
+	mono = ApplyCurve(monoBlocks, curve)
+
+	monoImage.Save("data/result_1raw.png")
+	return
+}
+
 func main() {
 	const count = 3486
 	noise := ImageLoadRaw("data/noise.raw")
@@ -42,24 +57,21 @@ func main() {
 	//noise.SaveRaw("data/noise.raw")
 	//noise.Save("data/noise.png")
 
-	grayA := ImageLoad("data/video/0100.tif", -1)
-	grayA.GammaCorrection(2.4)
-	grayBlocksA, _, _ := ImageToBlocks(grayA)
-	monoA := BinMask(grayA, noise)
-	monoBlocksA, _, _ := ImageToBlocks(monoA)
+	temp := ImageLoad("data/video/0100.tif", -1)
+	bw, bh := GetSizeInBlocks(temp)
+	width := temp.Width
+	height := temp.Height
+	curve := GetHilbertCurve(bw, bh)
 
-	grayB := ImageLoad("data/video/0101.tif", -1)
-	grayB.GammaCorrection(2.4)
-	grayBlocksB, _, _ := ImageToBlocks(grayB)
-	monoB := BinMask(grayB, noise)
-	monoBlocksB, bw, bh := ImageToBlocks(monoB)
-	res := EncodeFrame(grayBlocksB, monoBlocksB, grayBlocksA, 0.5)
-	fmt.Println(len(res), len(grayBlocksB))
-	fmt.Printf("Compression: %2.f %% (%d/%d)\n", float64(res.GetSize())/float64(grayB.Width*grayB.Height)*100, res.GetSize(), grayB.Width*grayB.Height)
+	grayA, monoA := LoadFrame("data/video/0100.tif", noise, curve)
+	grayB, monoB := LoadFrame("data/video/0101.tif", noise, curve)
 
-	monoB.Save("data/result_1orig.png")
+	res := EncodeFrame(grayB, monoB, grayA, 0.5)
+	fmt.Println(len(res), len(grayB))
+	fmt.Printf("Compression: %2.f %% (%d/%d)\n", float64(res.GetSize())/float64(width*height)*100, res.GetSize(), width*height)
 
-	resBlocks := res.Decode(monoBlocksA)
+	resBlocks := res.Decode(monoA)
+	resBlocks = RevertCurve(resBlocks, curve)
 	resImage := BlocksToImage(resBlocks, bw, bh)
 	resImage.Save("data/result_2compress.png")
 }

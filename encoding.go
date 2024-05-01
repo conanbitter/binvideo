@@ -24,9 +24,8 @@ var FullBlack = ImageBlock{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
 type EncodingChain []*EncodedBlock
 
-func ImageToBlocks(image *ImageData) ([]ImageBlock, int, int) {
-	bw := int(math.Ceil(float64(image.Width) / 4))
-	bh := int(math.Ceil(float64(image.Height) / 4))
+func ImageToBlocks(image *ImageData) []ImageBlock {
+	bw, bh := GetSizeInBlocks(image)
 	result := make([]ImageBlock, bw*bh)
 	for y := 0; y < bh; y++ {
 		for x := 0; x < bw; x++ {
@@ -48,7 +47,7 @@ func ImageToBlocks(image *ImageData) ([]ImageBlock, int, int) {
 			}
 		}
 	}
-	return result, bw, bh
+	return result
 }
 
 func BlocksToImage(blocks []ImageBlock, blockWidth int, blockHeight int) *ImageData {
@@ -108,7 +107,7 @@ func EncodeFrame(gray []ImageBlock, mono []ImageBlock, prevGray []ImageBlock, tr
 			}
 		}
 
-		if CompareBlocks(&gray[i], &prevGray[i]) < treshold {
+		if prevGray != nil && CompareBlocks(&gray[i], &prevGray[i]) < treshold {
 			last = &EncodedBlock{
 				BlockType: ENC_SKIP,
 				Count:     1,
@@ -190,4 +189,8 @@ func (chain EncodingChain) Decode(prevMono []ImageBlock) []ImageBlock {
 		}
 	}
 	return result
+}
+
+func GetSizeInBlocks(image *ImageData) (int, int) {
+	return int(math.Ceil(float64(image.Width) / 4)), int(math.Ceil(float64(image.Height) / 4))
 }

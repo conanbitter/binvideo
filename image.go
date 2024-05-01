@@ -85,6 +85,15 @@ func (img *ImageData) Get(x int, y int) float64 {
 	return img.Data[x+y*img.Width]
 }
 
+func (img *ImageData) GammaCorrection(gamma float64) {
+	for i, c := range img.Data {
+		if c <= 0.04045 {
+			continue
+		}
+		img.Data[i] = math.Pow((c+0.055)/1.055, gamma)
+	}
+}
+
 func NewImage(width int, height int) *ImageData {
 	result := &ImageData{
 		Width:  width,

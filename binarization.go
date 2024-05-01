@@ -167,3 +167,31 @@ func BinMask4(image *ImageData, mask *ImageData, bin *ImageData) {
 		}
 	}
 }
+
+func GetAccentMask(image *ImageData, kernelRadius int, k float64, amplitude float64) *ImageData {
+	const R = float64(0.5)
+	const level = float64(15)
+	newImage := make([]float64, len(image.Data))
+	for i, point := range image.Data {
+		kernel := getKernel(i, image, kernelRadius)
+		mean := meanValue(kernel)
+		dev := devValue(kernel, mean)
+		treshold := mean * (1 + k*(dev/R-1))
+		newImage[i] = math.Pow((point-treshold)*level, amplitude)
+	}
+	return &ImageData{
+		Width:  image.Width,
+		Height: image.Height,
+		Data:   newImage,
+	}
+}
+
+func BinMaskAccent(image *ImageData, mask *ImageData, accent *ImageData) {
+	for i, point := range image.Data {
+		if point*accent.Data[i] > mask.Data[i] {
+			image.Data[i] = 1.0
+		} else {
+			image.Data[i] = 0.0
+		}
+	}
+}

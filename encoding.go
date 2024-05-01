@@ -237,3 +237,12 @@ func (chain EncodingChain) Pack() []byte {
 	}
 	return result
 }
+
+func (chain EncodingChain) IsClean() bool {
+	for _, block := range chain {
+		if block.BlockType == ENC_SKIP {
+			return false
+		}
+	}
+	return true
+}

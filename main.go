@@ -24,7 +24,7 @@ func LoadFrame(filename string, noise *ImageData, curve []int) (gray []ImageBloc
 }
 
 func main() {
-	const count = 100 // 3486
+	const count = 200 // 3486
 	noise := ImageLoadRaw("data/noise.raw")
 	temp := ImageLoad("data/video/0100.tif", -1)
 	bw, bh := GetSizeInBlocks(temp)
@@ -52,9 +52,14 @@ func main() {
 		resBlocks := res.Decode(lastMono)
 		resBlocks = RevertCurve(resBlocks, curve)
 		resImage := BlocksToImage(resBlocks, bw, bh)
-		resImage.Save(fmt.Sprintf("data/vidcompress2/%04d.png", i))
-		lastGray = res.DecodeGray(gray, lastGray)
-		lastMono = res.Decode(lastMono)
+		resImage.Save(fmt.Sprintf("data/vidcompress3/%04d.png", i))
+		if i%10 != 0 {
+			lastMono = res.Decode(lastMono)
+			lastGray = res.DecodeGray(gray, lastGray)
+		} else {
+			lastGray = nil
+			lastMono = nil
+		}
 
 		//fmt.Println(i)
 		//image := ImageLoad(fmt.Sprintf("data/video/%04d.tif", i), -1) //2.4

@@ -213,3 +213,27 @@ func (chain EncodingChain) DecodeGray(curGray []ImageBlock, prevGray []ImageBloc
 func GetSizeInBlocks(image *ImageData) (int, int) {
 	return int(math.Ceil(float64(image.Width) / 4)), int(math.Ceil(float64(image.Height) / 4))
 }
+
+func packData(data *ImageBlock) []byte {
+	result := []byte{0, 0}
+	for i, c := range data {
+		if c > 0.5 {
+			result[i/8] |= 1 << i
+		}
+	}
+	return result
+}
+
+func (chain EncodingChain) Pack() []byte {
+	result := make([]byte, 0, chain.GetSize())
+	for _, block := range chain {
+		var head byte = byte(block.Count-1) & (byte(block.BlockType) << 6)
+		result = append(result, head)
+		if block.BlockType == ENC_RAW {
+			for _, data := range block.Data {
+				result = append(result, packData(&data)...)
+			}
+		}
+	}
+	return result
+}

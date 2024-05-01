@@ -24,7 +24,7 @@ func LoadFrame(filename string, noise *ImageData, curve []int) (gray []ImageBloc
 }
 
 func main() {
-	const count = 3486
+	const count = 100 // 3486
 	noise := ImageLoadRaw("data/noise.raw")
 	temp := ImageLoad("data/video/0100.tif", -1)
 	bw, bh := GetSizeInBlocks(temp)
@@ -45,8 +45,8 @@ func main() {
 		bar.Set(i)
 
 		gray, mono := LoadFrame(fmt.Sprintf("data/video/%04d.tif", i), noise, curve)
-		res := EncodeFrame(gray, mono, lastGray, 0.7)
-		avgComp += float64(res.GetSize()) / float64(width*height) * 100
+		res := EncodeFrame(gray, mono, lastGray, 1.0)
+		avgComp += float64(res.GetSize()) / (float64(width*height) / 8.0) * 100
 		totalSize += uint64(res.GetSize())
 
 		resBlocks := res.Decode(lastMono)

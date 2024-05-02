@@ -24,6 +24,15 @@ var FullBlack = ImageBlock{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
 type EncodingChain []*EncodedBlock
 
+type EncodingOptions struct {
+	Skip      float64
+	SkipCont  float64
+	White     float64
+	WhiteCont float64
+	Black     float64
+	BlackCont float64
+}
+
 func ImageToBlocks(image *ImageData) []ImageBlock {
 	bw, bh := GetSizeInBlocks(image)
 	result := make([]ImageBlock, bw*bh)
@@ -82,7 +91,7 @@ func CompareBlocks(a *ImageBlock, b *ImageBlock) float64 {
 	return acc
 }
 
-func EncodeFrame(gray []ImageBlock, mono []ImageBlock, prevGray []ImageBlock, treshold float64) EncodingChain {
+func EncodeFrame(gray []ImageBlock, mono []ImageBlock, prevGray []ImageBlock, options *EncodingOptions) EncodingChain {
 	var last *EncodedBlock = nil
 	result := make([]*EncodedBlock, 0)
 
@@ -90,24 +99,24 @@ func EncodeFrame(gray []ImageBlock, mono []ImageBlock, prevGray []ImageBlock, tr
 		if last != nil && last.Count <= MaxLength {
 			switch last.BlockType {
 			case ENC_WHITE:
-				if (CompareBlocks(&gray[i], &FullWhite) < treshold) || (CompareBlocks(&mono[i], &FullWhite) < treshold) {
+				if (CompareBlocks(&gray[i], &FullWhite) < options.WhiteCont) || (CompareBlocks(&mono[i], &FullWhite) < options.WhiteCont) {
 					last.Count++
 					continue
 				}
 			case ENC_BLACK:
-				if (CompareBlocks(&gray[i], &FullBlack) < treshold) || (CompareBlocks(&mono[i], &FullBlack) < treshold) {
+				if (CompareBlocks(&gray[i], &FullBlack) < options.BlackCont) || (CompareBlocks(&mono[i], &FullBlack) < options.BlackCont) {
 					last.Count++
 					continue
 				}
 			case ENC_SKIP:
-				if CompareBlocks(&gray[i], &prevGray[i]) < treshold {
+				if CompareBlocks(&gray[i], &prevGray[i]) < options.SkipCont {
 					last.Count++
 					continue
 				}
 			}
 		}
 
-		if prevGray != nil && CompareBlocks(&gray[i], &prevGray[i]) < treshold {
+		if prevGray != nil && CompareBlocks(&gray[i], &prevGray[i]) < options.Skip {
 			last = &EncodedBlock{
 				BlockType: ENC_SKIP,
 				Count:     1,
@@ -116,7 +125,7 @@ func EncodeFrame(gray []ImageBlock, mono []ImageBlock, prevGray []ImageBlock, tr
 			result = append(result, last)
 			continue
 		}
-		if (CompareBlocks(&gray[i], &FullWhite) < treshold) || (CompareBlocks(&mono[i], &FullWhite) < treshold) {
+		if (CompareBlocks(&gray[i], &FullWhite) < options.White) || (CompareBlocks(&mono[i], &FullWhite) < options.White) {
 			last = &EncodedBlock{
 				BlockType: ENC_WHITE,
 				Count:     1,
@@ -125,7 +134,7 @@ func EncodeFrame(gray []ImageBlock, mono []ImageBlock, prevGray []ImageBlock, tr
 			result = append(result, last)
 			continue
 		}
-		if (CompareBlocks(&gray[i], &FullBlack) < treshold) || (CompareBlocks(&mono[i], &FullBlack) < treshold) {
+		if (CompareBlocks(&gray[i], &FullBlack) < options.Black) || (CompareBlocks(&mono[i], &FullBlack) < options.Black) {
 			last = &EncodedBlock{
 				BlockType: ENC_BLACK,
 				Count:     1,
@@ -245,4 +254,30 @@ func (chain EncodingChain) IsClean() bool {
 		}
 	}
 	return true
+}
+
+func NewEncodingOptions(treshold float64) *EncodingOptions {
+	return &EncodingOptions{
+		Skip:      treshold,
+		SkipCont:  treshold,
+		White:     treshold,
+		WhiteCont: treshold,
+		Black:     treshold,
+		BlackCont: treshold,
+	}
+}
+
+func (opts *EncodingOptions) SetSkip(treshold float64) {
+	opts.Skip = treshold
+	opts.SkipCont = treshold
+}
+
+func (opts *EncodingOptions) SetWhite(treshold float64) {
+	opts.White = treshold
+	opts.WhiteCont = treshold
+}
+
+func (opts *EncodingOptions) SetBlack(treshold float64) {
+	opts.Black = treshold
+	opts.BlackCont = treshold
 }

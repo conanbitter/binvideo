@@ -10,9 +10,9 @@ import (
 
 func LoadFrame(filename string, noise *ImageData, curve []int) (gray []ImageBlock, mono []ImageBlock) {
 	grayImage := ImageLoad(filename, -1)
-	accent := GetAccentMask(grayImage, 2, 0.2, 0.3)
+	//accent := GetAccentMask(grayImage, 2, 0.2, 0.3)
 	grayImage.GammaCorrection(2.4)
-	ApplyAccent(grayImage, accent)
+	//ApplyAccent(grayImage, accent)
 	grayBlocks := ImageToBlocks(grayImage)
 	gray = ApplyCurve(grayBlocks, curve)
 	monoImage := BinMask(grayImage, noise)
@@ -41,11 +41,13 @@ func main() {
 	var lastGray []ImageBlock = nil
 	var avgComp float64 = 0
 	var totalSize uint64 = 0
+	options := NewEncodingOptions(1.5)
+	options.SetBlack(0.5)
 	for i := 0; i <= count; i++ {
 		bar.Set(i)
 
 		gray, mono := LoadFrame(fmt.Sprintf("data/video/%04d.tif", i), noise, curve)
-		res := EncodeFrame(gray, mono, lastGray, 1.0)
+		res := EncodeFrame(gray, mono, lastGray, options)
 		avgComp += float64(res.GetSize()) / (float64(width*height) / 8.0) * 100
 		totalSize += uint64(res.GetSize())
 

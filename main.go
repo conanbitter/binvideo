@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/schollz/progressbar/v3"
 
@@ -24,7 +25,17 @@ func LoadFrame(filename string, noise *ImageData, curve []int) (gray []ImageBloc
 }
 
 func main() {
-	const count = 200 // 3486
+	options := NewEncodingOptions(1.0)
+	options.SetBlack(0.5)
+
+	filelist := make([]string, 0)
+	for i := 0; i <= 3486; i++ {
+		filelist = append(filelist, fmt.Sprintf("data/video/%04d.tif", i))
+	}
+	EncodeVideo(filelist, "data/test.bvf", options, 16.0)
+	os.Exit(0)
+
+	const count = 3486
 	noise := ImageLoadRaw("data/noise.raw")
 	temp := ImageLoad("data/video/0100.tif", -1)
 	bw, bh := GetSizeInBlocks(temp)
@@ -41,8 +52,6 @@ func main() {
 	var lastGray []ImageBlock = nil
 	var avgComp float64 = 0
 	var totalSize uint64 = 0
-	options := NewEncodingOptions(1.5)
-	options.SetBlack(0.5)
 	for i := 0; i <= count; i++ {
 		bar.Set(i)
 
@@ -55,7 +64,7 @@ func main() {
 		resBlocks = RevertCurve(resBlocks, curve)
 		resImage := BlocksToImage(resBlocks, bw, bh)
 		resImage.Save(fmt.Sprintf("data/vidcompress3/%04d.png", i))
-		if i%10 != 0 {
+		if i%80 != 0 {
 			lastMono = res.Decode(lastMono)
 			lastGray = res.DecodeGray(gray, lastGray)
 		} else {

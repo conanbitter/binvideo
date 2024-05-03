@@ -236,7 +236,7 @@ func packData(data *ImageBlock) []byte {
 func (chain EncodingChain) Pack() []byte {
 	result := make([]byte, 0, chain.GetSize())
 	for _, block := range chain {
-		var head byte = byte(block.Count-1) & (byte(block.BlockType) << 6)
+		var head byte = byte(block.Count-1) | (byte(block.BlockType) << 6)
 		result = append(result, head)
 		if block.BlockType == ENC_RAW {
 			for _, data := range block.Data {

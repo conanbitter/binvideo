@@ -1,1 +1,5 @@
 data
+player/bin
+player/build
+player/.vscode
+player/cmake

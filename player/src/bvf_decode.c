@@ -2,8 +2,81 @@
 #include <stdlib.h>
 #include <math.h>
 
-int* get_hilbert_curve(int bwidth, int bheight) {
-    int* curve = calloc(bwidth * bheight, sizeof(int));
+typedef struct Point {
+    int x;
+    int y;
+} Point;
+
+const Point INIT_POINTS[4] = {
+    {0, 0},
+    {0, 1},
+    {1, 1},
+    {1, 0},
+};
+
+Point hindex2xy(int hindex, int n) {
+    Point p = INIT_POINTS[hindex & 0b11];
+    hindex >>= 2;
+    for (int i = 4; i <= n; i *= 2) {
+        int i2 = i / 2;
+        switch (hindex & 0b11) {
+            case 0: {
+                int temp = p.x;
+                p.x = p.y;
+                p.y = temp;
+            } break;
+            case 1:
+                p.y += i2;
+                break;
+            case 2:
+                p.x += i2;
+                p.y += i2;
+                break;
+            case 3: {
+                int temp = p.x;
+                p.x = i2 - 1 - p.y + i2;
+                p.y = i2 - 1 - temp;
+            } break;
+        }
+        hindex >>= 2;
+    }
+    return p;
+}
+
+int* get_hilbert_curve(int width, int height) {
+    int* curve = calloc(width * height, sizeof(int));
+
+    int size;
+    if (width > height) {
+        size = width;
+    } else {
+        size = height;
+    }
+    int n = 1;
+    while (n < size) {
+        n *= 2;
+    }
+    size = n;
+    int offsetx = (size - width) / 2;
+    int offsety = (size - height) / 2;
+
+    int curveInd = 0;
+
+    for (int i = 0; i < width * height; i++) {
+        Point p;
+        while (1) {
+            p = hindex2xy(curveInd, size);
+            curveInd++;
+            if ((p.x >= offsetx &&
+                 p.x < offsetx + width &&
+                 p.y >= offsety &&
+                 p.y < offsety + height) ||
+                curveInd >= size * size) {
+                break;
+            }
+        }
+        curve[i] = p.x - offsetx + (p.y - offsety) * width;
+    }
     return curve;
 }
 

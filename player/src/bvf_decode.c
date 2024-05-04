@@ -1,5 +1,11 @@
 #include "bvf_decode.h"
 #include <stdlib.h>
+#include <math.h>
+
+int* get_hilbert_curve(int bwidth, int bheight) {
+    int* curve = calloc(bwidth * bheight, sizeof(int));
+    return curve;
+}
 
 BVF_File* bvf_open(const char* filename) {
     BVF_File* result = malloc(sizeof(BVF_File));
@@ -38,6 +44,13 @@ BVF_File* bvf_open(const char* filename) {
     result->buffer = NULL;
     result->buffer_size = 0;
 
+    result->blocks_width = ceil(width / 2);
+    result->blocks_height = ceil(height / 2);
+    result->block_data_size = result->blocks_width * result->blocks_height * 16;
+    result->blocks = malloc(result->block_data_size);
+    result->last_blocks = malloc(result->block_data_size);
+    result->curve = get_hilbert_curve(result->blocks_width, result->blocks_height);
+
     result->current_frame = -1;
 
     return result;
@@ -49,6 +62,9 @@ void bvf_close(BVF_File** file) {
     if ((*file)->buffer != NULL) {
         free((*file)->buffer);
     }
+    free((*file)->curve);
+    free((*file)->blocks);
+    free((*file)->last_blocks);
     free(*file);
     *file = NULL;
 }

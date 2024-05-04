@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+typedef uint8_t Block[16];
+
 typedef struct BVF_File {
     // Header
     int format_version;
@@ -14,10 +16,17 @@ typedef struct BVF_File {
     FILE* file;
     float frame_time;
     uint8_t* frame;
-    uint8_t* buffer;
-    size_t buffer_size;
     int current_frame;
     long frames_offset;
+
+    uint8_t* buffer;
+    size_t buffer_size;
+    Block* blocks;
+    Block* last_blocks;
+    size_t block_data_size;
+    int blocks_width;
+    int blocks_height;
+    int* curve;
 } BVF_File;
 
 BVF_File* bvf_open(const char* filename);

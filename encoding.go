@@ -144,7 +144,7 @@ func EncodeFrame(gray []ImageBlock, mono []ImageBlock, prevGray []ImageBlock, op
 			continue
 		}
 
-		if last != nil && last.BlockType == ENC_RAW {
+		if last != nil && last.BlockType == ENC_RAW && last.Count <= MaxLength {
 			last.Count++
 			last.Data = append(last.Data, mono[i])
 		} else {
@@ -227,7 +227,7 @@ func packData(data *ImageBlock) []byte {
 	result := []byte{0, 0}
 	for i, c := range data {
 		if c > 0.5 {
-			result[i/8] |= 1 << i
+			result[i/8] |= 1 << (i % 8)
 		}
 	}
 	return result

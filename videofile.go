@@ -63,7 +63,7 @@ func EncodeVideo(files []string, outfile string, options *EncodingOptions, fps f
 		mono := ApplyCurve(monoBlocks, curve)
 
 		enc := EncodeFrame(gray, mono, lastGray, options)
-		
+
 		lastMono = enc.Decode(lastMono)
 		lastGray = enc.DecodeGray(gray, lastGray)
 

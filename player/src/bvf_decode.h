@@ -21,6 +21,7 @@ typedef struct BVF_File {
 
     uint8_t* buffer;
     size_t buffer_size;
+    size_t buffer_capacity;
     Block* blocks;
     Block* last_blocks;
     size_t block_data_size;

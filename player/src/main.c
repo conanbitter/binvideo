@@ -145,7 +145,6 @@ void main(int argc, char *argv[]) {
 
         if (elapsed > video->frame_time) {
             uint8_t *data = bvf_next_frame(video);
-            break;
             if (data == NULL) {
                 working = 0;
             }

@@ -1,6 +1,7 @@
 #include "bvf_decode.h"
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 typedef struct Point {
     int x;
@@ -14,7 +15,16 @@ const Point INIT_POINTS[4] = {
     {1, 0},
 };
 
-Point hindex2xy(int hindex, int n) {
+const Block FULL_BLACK = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const Block FULL_WHITE = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+#define ENC_RAW 0
+#define ENC_SKIP 1
+#define ENC_BLACK 2
+#define ENC_WHITE 3
+
+static Point
+hindex2xy(int hindex, int n) {
     Point p = INIT_POINTS[hindex & 0b11];
     hindex >>= 2;
     for (int i = 4; i <= n; i *= 2) {
@@ -43,7 +53,7 @@ Point hindex2xy(int hindex, int n) {
     return p;
 }
 
-int* get_hilbert_curve(int width, int height) {
+static int* get_hilbert_curve(int width, int height) {
     int* curve = calloc(width * height, sizeof(int));
 
     int size;
@@ -75,7 +85,7 @@ int* get_hilbert_curve(int width, int height) {
                 break;
             }
         }
-        curve[i] = p.x - offsetx + (p.y - offsety) * width;
+        curve[p.x - offsetx + (p.y - offsety) * width] = i;
     }
     return curve;
 }
@@ -116,13 +126,17 @@ BVF_File* bvf_open(const char* filename) {
     result->frame = malloc(result->width * result->height);
     result->buffer = NULL;
     result->buffer_size = 0;
+    result->buffer_capacity = 0;
 
-    result->blocks_width = ceil(width / 2);
-    result->blocks_height = ceil(height / 2);
-    result->block_data_size = result->blocks_width * result->blocks_height * 16;
-    result->blocks = malloc(result->block_data_size);
-    result->last_blocks = malloc(result->block_data_size);
+    result->blocks_width = ceil((float)width / 4.0);
+    result->blocks_height = ceil((float)height / 4.0);
+    // result->block_data_size = result->blocks_width * result->blocks_height * 16;
+    // result->blocks = malloc(result->block_data_size);
+    result->blocks = calloc(result->blocks_width * result->blocks_height, sizeof(Block));
+    // result->last_blocks = malloc(result->block_data_size);
     result->curve = get_hilbert_curve(result->blocks_width, result->blocks_height);
+
+    // memset(result->frame, 1, result->width * result->height);
 
     result->current_frame = -1;
 
@@ -132,14 +146,69 @@ BVF_File* bvf_open(const char* filename) {
 void bvf_close(BVF_File** file) {
     fclose((*file)->file);
     free((*file)->frame);
-    if ((*file)->buffer != NULL) {
-        free((*file)->buffer);
-    }
+    free((*file)->buffer);
     free((*file)->curve);
     free((*file)->blocks);
-    free((*file)->last_blocks);
+    // free((*file)->last_blocks);
     free(*file);
     *file = NULL;
+}
+
+static unpack_block(uint8_t data1, uint8_t data2, uint8_t* result) {
+    uint16_t stiched = ((uint16_t)data2) << 8 | (uint16_t)data1;
+    for (int i = 0; i < 16; i++) {
+        result[i] = ((stiched >> i) & 0b1) > 0 ? 1 : 0;
+    }
+}
+
+static decode_blocks(BVF_File* file) {
+    int ind = 0;
+    int bi = 0;
+    int bc = 0;
+    while (ind < file->buffer_size /* && bi < file->blocks_width * file->blocks_height*/) {
+        uint8_t block_head = file->buffer[ind];
+        uint8_t block_type = file->buffer[ind] >> 6;
+        uint8_t block_length = (file->buffer[ind] & 0b111111) + 1;
+        bc += block_length;
+        ind++;
+        switch (block_type) {
+            case ENC_RAW:
+                for (int i = 0; i < block_length; i++) {
+                    unpack_block(file->buffer[ind], file->buffer[ind + 1], file->blocks[bi]);
+                    ind += 2;
+                    bi++;
+                }
+                break;
+            case ENC_SKIP:
+                bi += block_length;
+                break;
+            case ENC_BLACK:
+                for (int i = 0; i < block_length; i++) {
+                    memcpy(&file->blocks[bi], &FULL_BLACK, sizeof(Block));
+                    bi++;
+                }
+                break;
+            case ENC_WHITE:
+                for (int i = 0; i < block_length; i++) {
+                    memcpy(&file->blocks[bi], &FULL_WHITE, sizeof(Block));
+                    bi++;
+                }
+                break;
+        }
+    }
+}
+
+static unwrap_pixels(BVF_File* file) {
+    for (int y = 0; y < file->height; y++)
+        for (int x = 0; x < file->width; x++) {
+            int pi = x + y * file->width;
+            int bi = x / 4 + y / 4 * file->blocks_width;
+            bi = file->curve[bi];
+            int bx = x % 4;
+            int by = y % 4;
+            int bpi = bx + by * 4;
+            file->frame[pi] = file->blocks[bi][bpi];
+        }
 }
 
 uint8_t* bvf_next_frame(BVF_File* file) {
@@ -154,10 +223,15 @@ uint8_t* bvf_next_frame(BVF_File* file) {
         data_length &= ~(1 << 31);
     }
 
-    if (data_length > file->buffer_size) {
+    if (data_length > file->buffer_capacity) {
         free(file->buffer);
-        malloc(data_length);
+        file->buffer = malloc(data_length);
+        file->buffer_capacity = data_length;
     }
+    file->buffer_size = data_length;
     fread(file->buffer, data_length, 1, file->file);
+    decode_blocks(file);
+    unwrap_pixels(file);
+
     return file->frame;
 }

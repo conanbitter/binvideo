@@ -12,6 +12,7 @@ BVF_File *video;
 int screen_width = 100, screen_height = 100, screen_scale = 1;
 Uint32 color_black;
 Uint32 color_white;
+SDL_PixelFormat *pixel_format;
 
 void convert_frame(uint8_t *data, int width, int height) {
     Uint32 *pixels;
@@ -22,6 +23,54 @@ void convert_frame(uint8_t *data, int width, int height) {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             pixels[y * pitch + x] = data[y * width + x] ? color_white : color_black;
+        }
+    }
+
+    SDL_UnlockTexture(screen);
+}
+
+int min(int a, int b) {
+    return a < b ? a : b;
+}
+
+int max(int a, int b) {
+    return a > b ? a : b;
+}
+
+Uint8 lerp(int c1, int c2, float alpha) {
+    return (Uint8)((float)c1 + (float)(c2 - c1) * alpha);
+}
+
+const radius = 1;
+
+void convert_frame_blur(uint8_t *data, int width, int height) {
+    Uint32 *pixels;
+    int pitch;
+    SDL_LockTexture(screen, NULL, &pixels, &pitch);
+    pitch /= sizeof(Uint32);
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            float c = 0;
+            int count = 0;
+            for (int ky = max(y - radius, 0); ky <= min(y + radius, height - 1); ky++)
+                for (int kx = max(x - radius, 0); kx <= min(x + radius, width - 1); kx++) {
+                    if (data[ky * width + kx]) {
+                        c += 1.0;
+                    }
+                    count++;
+                }
+            c /= count;
+            float fc = data[y * width + x] ? 1.0 : 0.0;
+            fc = fc * 0.5 + c * 1.0;
+            if (fc > 1.0) fc = 1.0;
+            // Uint8 bc = (Uint8)(255.0 * fc);
+            // pixels[y * pitch + x] = SDL_MapRGBA(pixel_format, bc, bc, bc, 255);
+            pixels[y * pitch + x] = SDL_MapRGBA(pixel_format,
+                                                lerp(21, 73, fc),
+                                                lerp(21, 180, fc),
+                                                lerp(21, 42, fc),
+                                                255);
         }
     }
 
@@ -59,7 +108,7 @@ void main(int argc, char *argv[]) {
         return;
     }*/
 
-    video = bvf_open("../../data/test.bvf");  // argv[1]
+    video = bvf_open("../../data/test_min.bvf");  // argv[1]
     if (video == NULL) {
         return;
     }
@@ -80,9 +129,9 @@ void main(int argc, char *argv[]) {
 
     Uint32 format;
     SDL_QueryTexture(screen, &format, NULL, NULL, NULL);
-    SDL_PixelFormat *pixel_format = SDL_AllocFormat(format);
-    color_black = SDL_MapRGBA(pixel_format, 0, 0, 0, 255);
-    color_white = SDL_MapRGBA(pixel_format, 255, 255, 255, 255);
+    /*SDL_PixelFormat */ pixel_format = SDL_AllocFormat(format);
+    color_black = SDL_MapRGBA(pixel_format, 41, 41, 41, 255);
+    color_white = SDL_MapRGBA(pixel_format, 73, 180, 42, 255);
 
     screen_rect.w = screen_width;
     screen_rect.h = screen_height;
@@ -148,7 +197,7 @@ void main(int argc, char *argv[]) {
             if (data == NULL) {
                 working = 0;
             }
-            convert_frame(data, video->width, video->height);
+            convert_frame_blur(data, video->width, video->height);
             elapsed -= video->frame_time;
         }
 

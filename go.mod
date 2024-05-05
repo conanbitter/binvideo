@@ -1,4 +1,4 @@
-module binvideo
+module cybercon
 
 go 1.21.5
 

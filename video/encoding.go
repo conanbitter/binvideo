@@ -1,6 +1,9 @@
 package main
 
-import "math"
+import (
+	com "cybercon/common"
+	"math"
+)
 
 const (
 	ENC_RAW   byte = 0
@@ -33,7 +36,7 @@ type EncodingOptions struct {
 	BlackCont float64
 }
 
-func ImageToBlocks(image *ImageData) []ImageBlock {
+func ImageToBlocks(image *com.ImageData) []ImageBlock {
 	bw, bh := GetSizeInBlocks(image)
 	result := make([]ImageBlock, bw*bh)
 	for y := 0; y < bh; y++ {
@@ -59,12 +62,8 @@ func ImageToBlocks(image *ImageData) []ImageBlock {
 	return result
 }
 
-func BlocksToImage(blocks []ImageBlock, blockWidth int, blockHeight int) *ImageData {
-	result := &ImageData{
-		Width:  blockWidth * 4,
-		Height: blockHeight * 4,
-		Data:   make([]float64, blockWidth*blockHeight*16),
-	}
+func BlocksToImage(blocks []ImageBlock, blockWidth int, blockHeight int) *com.ImageData {
+	result := com.NewImage(blockWidth*4, blockHeight*4)
 	for y := 0; y < blockHeight; y++ {
 		for x := 0; x < blockWidth; x++ {
 			for by := 0; by < 4; by++ {
@@ -219,7 +218,7 @@ func (chain EncodingChain) DecodeGray(curGray []ImageBlock, prevGray []ImageBloc
 	return result
 }
 
-func GetSizeInBlocks(image *ImageData) (int, int) {
+func GetSizeInBlocks(image *com.ImageData) (int, int) {
 	return int(math.Ceil(float64(image.Width) / 4)), int(math.Ceil(float64(image.Height) / 4))
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	com "cybercon/common"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -16,8 +17,8 @@ func write(file io.Writer, data interface{}) {
 var magic = [3]byte{'B', 'V', 1}
 
 func EncodeVideo(files []string, outfile string, options *EncodingOptions, fps float32) {
-	noise := ImageLoadRaw("data/noise.raw")
-	temp := ImageLoad(files[0], -1)
+	noise := com.ImageLoadRaw("data/noise.raw")
+	temp := com.ImageLoad(files[0], -1)
 	bw, bh := GetSizeInBlocks(temp)
 	width := temp.Width
 	height := temp.Height
@@ -50,7 +51,7 @@ func EncodeVideo(files []string, outfile string, options *EncodingOptions, fps f
 	for i, filename := range files {
 		bar.Set(i)
 
-		grayImage := ImageLoad(filename, 2.4)
+		grayImage := com.ImageLoad(filename, 2.4)
 		if grayImage.Width != width || grayImage.Height != height {
 			panic(fmt.Errorf("wrong frame size: %dx%d instead of %dx%d", grayImage.Width, grayImage.Height, width, height))
 		}
@@ -58,7 +59,7 @@ func EncodeVideo(files []string, outfile string, options *EncodingOptions, fps f
 		grayBlocks := ImageToBlocks(grayImage)
 		gray := ApplyCurve(grayBlocks, curve)
 
-		monoImage := BinMask(grayImage, noise)
+		monoImage := com.BinMask(grayImage, noise)
 		monoBlocks := ImageToBlocks(monoImage)
 		mono := ApplyCurve(monoBlocks, curve)
 

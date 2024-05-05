@@ -6,14 +6,19 @@ import (
 	"os"
 )
 
-var InitPoints = [4]Point{
+type point struct {
+	X int
+	Y int
+}
+
+var InitPoints = [4]point{
 	{X: 0, Y: 0},
 	{X: 0, Y: 1},
 	{X: 1, Y: 1},
 	{X: 1, Y: 0},
 }
 
-func hindex2xy(hindex int, n int) Point {
+func hindex2xy(hindex int, n int) point {
 	p := InitPoints[hindex&0b11]
 	hindex >>= 2
 
@@ -21,14 +26,14 @@ func hindex2xy(hindex int, n int) Point {
 		i2 := i / 2
 		switch hindex & 0b11 {
 		case 0:
-			p = Point{X: p.Y, Y: p.X}
+			p = point{X: p.Y, Y: p.X}
 		case 1:
 			p.Y += i2
 		case 2:
 			p.X += i2
 			p.Y += i2
 		case 3:
-			p = Point{
+			p = point{
 				X: i2 - 1 - p.Y + i2,
 				Y: i2 - 1 - p.X,
 			}
@@ -58,7 +63,7 @@ func GetHilbertCurve(width int, height int) []int {
 
 	result := make([]int, width*height)
 	for i := range result {
-		var p Point
+		var p point
 		for {
 			p = hindex2xy(curveInd, size)
 			curveInd++
@@ -107,8 +112,8 @@ func drawLine(x1 int, y1 int, x2 int, y2 int, image *image.Gray) {
 }
 
 func DebugDrawCurve(width int, height int, filename string) {
-	imwidth := width * 3   //+ 10
-	imheight := height * 3 //+ 10
+	imwidth := width * 3
+	imheight := height * 3
 	img := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{imwidth, imheight}})
 	for i := 0; i < imwidth*imheight; i++ {
 		img.Pix[i] = 255

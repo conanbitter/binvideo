@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"math"
@@ -10,7 +10,7 @@ import (
 const sigma = 1.5
 const divisor = sigma * sigma * 2
 
-type Point struct {
+type point struct {
 	X int
 	Y int
 }
@@ -122,7 +122,7 @@ func findCluster(image *ImageData, mask *ImageData) (int, int) {
 	return clusterX, clusterY
 }
 
-func generateBlueNoisePoints(width int, height int) []Point {
+func generateBlueNoisePoints(width int, height int) []point {
 	bar := progressbar.NewOptions(width*height,
 		progressbar.OptionFullWidth(),
 		progressbar.OptionEnableColorCodes(true),
@@ -133,7 +133,7 @@ func generateBlueNoisePoints(width int, height int) []Point {
 	lut := generateLut(width, height)
 
 	firstPointsCount := startFill(res, energyMask, lut, 0.1)
-	points := make([]Point, firstPointsCount)
+	points := make([]point, firstPointsCount)
 	//points[1] = Point{X: 1, Y: 1}
 
 	//Step 1
@@ -175,7 +175,7 @@ func generateBlueNoisePoints(width int, height int) []Point {
 		)
 		bar.Set(firstPointsCount - i)
 		clusterX, clusterY = findCluster(step2temp, step2mask)
-		points[i] = Point{X: clusterX, Y: clusterY}
+		points[i] = point{X: clusterX, Y: clusterY}
 		applyPoint(clusterX, clusterY, false, step2temp, step2mask, lut)
 	}
 
@@ -189,7 +189,7 @@ func generateBlueNoisePoints(width int, height int) []Point {
 		)
 		bar.Set(c)
 		voidX, voidY = findVoid(res, energyMask)
-		points = append(points, Point{X: voidX, Y: voidY})
+		points = append(points, point{X: voidX, Y: voidY})
 		applyPoint(voidX, voidY, true, res, energyMask, lut)
 	}
 
@@ -212,7 +212,7 @@ func generateBlueNoisePoints(width int, height int) []Point {
 		)
 		bar.Set(c)
 		clusterX, clusterY = findCluster(negative, negEnergy)
-		points = append(points, Point{X: clusterX, Y: clusterY})
+		points = append(points, point{X: clusterX, Y: clusterY})
 		applyPoint(clusterX, clusterY, false, negative, negEnergy, lut)
 	}
 

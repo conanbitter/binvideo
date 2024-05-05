@@ -7,16 +7,18 @@ import (
 	"github.com/schollz/progressbar/v3"
 
 	"github.com/dustin/go-humanize"
+
+	com "cybercon/common"
 )
 
-func LoadFrame(filename string, noise *ImageData, curve []int) (gray []ImageBlock, mono []ImageBlock) {
-	grayImage := ImageLoad(filename, -1)
+func LoadFrame(filename string, noise *com.ImageData, curve []int) (gray []ImageBlock, mono []ImageBlock) {
+	grayImage := com.ImageLoad(filename, -1)
 	//accent := GetAccentMask(grayImage, 2, 0.2, 0.3)
 	grayImage.GammaCorrection(2.4)
 	//ApplyAccent(grayImage, accent)
 	grayBlocks := ImageToBlocks(grayImage)
 	gray = ApplyCurve(grayBlocks, curve)
-	monoImage := BinMask(grayImage, noise)
+	monoImage := com.BinMask(grayImage, noise)
 	monoBlocks := ImageToBlocks(monoImage)
 	mono = ApplyCurve(monoBlocks, curve)
 
@@ -36,8 +38,8 @@ func main() {
 	os.Exit(0)
 
 	const count = 3486
-	noise := ImageLoadRaw("data/noise.raw")
-	temp := ImageLoad("data/video/0100.tif", -1)
+	noise := com.ImageLoadRaw("data/noise.raw")
+	temp := com.ImageLoad("data/video/0100.tif", -1)
 	bw, bh := GetSizeInBlocks(temp)
 	width := temp.Width
 	height := temp.Height

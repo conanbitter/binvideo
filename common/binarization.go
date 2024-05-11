@@ -138,16 +138,6 @@ func BinMask2(image *ImageData, mask *ImageData, bin *ImageData) {
 	}
 }
 
-func clipColorFloat(data float64) float64 {
-	if data < 0.0 {
-		data = 0.0
-	}
-	if data > 1.0 {
-		data = 1.0
-	}
-	return data
-}
-
 func BinMask3(image *ImageData, mask *ImageData, bin *ImageData, k float64) {
 	for i, point := range image.Data {
 		s := math.Pow(bin.Data[i], k)

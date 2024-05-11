@@ -29,6 +29,16 @@ func clipColor(data float64) uint8 {
 	return uint8(data * 255)
 }
 
+func clipFloat(data float64) float64 {
+	if data < 0.0 {
+		return 0.0
+	}
+	if data > 1.0 {
+		return 1.0
+	}
+	return data
+}
+
 func (img *ImageData) Save(filename string) {
 	output := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{img.Width, img.Height}})
 	for y := 0; y < img.Height; y++ {
@@ -131,6 +141,10 @@ func ColorConvert(r uint32, g uint32, b uint32, gamma float64) float64 {
 	return math.Pow((c+0.055)/1.055, gamma)
 }
 
+func ColorConvertFloat(r float64, g float64, b float64) float64 {
+	return 0.299*r + 0.587*g + 0.114*b
+}
+
 func ImageLoad(filename string, gamma float64) *ImageData {
 	imgFile, err := os.Open(filename)
 	if err != nil {
@@ -169,5 +183,53 @@ func ImageLoadRaw(filename string) *ImageData {
 	result.Data = make([]float64, result.Width*result.Height)
 	binary.Read(fo, binary.LittleEndian, result.Data)
 
+	return result
+}
+
+func ImageLoadDecompose(filename string) []*ImageData {
+	imgFile, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer imgFile.Close()
+	img, _, err := image.Decode(imgFile)
+	if err != nil {
+		panic(err)
+	}
+	bounds := img.Bounds()
+	width := bounds.Max.X - bounds.Min.X
+	height := bounds.Max.Y - bounds.Min.Y
+	result := []*ImageData{NewImage(width, height), NewImage(width, height), NewImage(width, height)}
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			r, g, b, _ := img.At(x, y).RGBA()
+			rf := float64(r) / 65535.0
+			gf := float64(g) / 65535.0
+			bf := float64(b) / 65535.0
+			result[0].Set(x-bounds.Min.X, y-bounds.Min.Y, rf)
+			result[1].Set(x-bounds.Min.X, y-bounds.Min.Y, gf)
+			result[2].Set(x-bounds.Min.X, y-bounds.Min.Y, bf)
+		}
+	}
+	return result
+}
+
+func ImageCompose(channels []*ImageData) *ImageData {
+	result := NewImage(channels[0].Width, channels[0].Height)
+	for i := range result.Data {
+		result.Data[i] = ColorConvertFloat(
+			channels[0].Data[i],
+			channels[1].Data[i],
+			channels[2].Data[i],
+		)
+	}
+	return result
+}
+
+func ImageMerge(img1 *ImageData, img2 *ImageData, alpha float64) *ImageData {
+	result := NewImage(img1.Width, img1.Height)
+	for i := range img1.Data {
+		result.Data[i] = clipFloat(img1.Data[i]*(1.0-alpha) + img2.Data[i]*alpha)
+	}
 	return result
 }

@@ -31,10 +31,10 @@ func main() {
 	options.SetBlack(0.5)
 
 	filelist := make([]string, 0)
-	for i := 0; i <= 3486; i++ {
+	for i := 1; i <= 4653; i++ {
 		filelist = append(filelist, fmt.Sprintf("data/video/%04d.tif", i))
 	}
-	EncodeVideo(filelist, "data/test.bvf", options, 16.0)
+	EncodeVideo(filelist, "data/test.bvf", options, 15.0)
 	os.Exit(0)
 
 	const count = 3486

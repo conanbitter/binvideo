@@ -17,12 +17,15 @@ func write(file io.Writer, data interface{}) {
 var magic = [3]byte{'B', 'V', 1}
 
 func EncodeVideo(files []string, outfile string, options *EncodingOptions, fps float32) {
-	noise := com.ImageLoadRaw("data/noise.raw")
+	noise := com.ImageLoadRaw("data/noise1024x768.raw")
 	temp := com.ImageLoad(files[0], -1)
 	bw, bh := GetSizeInBlocks(temp)
 	width := temp.Width
 	height := temp.Height
 	curve := GetHilbertCurve(bw, bh)
+
+	fmt.Println("Generating sampler")
+	sampler := com.GenerateSampler(width, height, 1000, 10, 100)
 
 	bar := progressbar.NewOptions(len(files),
 		progressbar.OptionFullWidth(),
@@ -60,6 +63,7 @@ func EncodeVideo(files []string, outfile string, options *EncodingOptions, fps f
 		gray := ApplyCurve(grayBlocks, curve)
 
 		monoImage := com.BinMask(grayImage, noise)
+		monoImage=com.EnhanceBWSampled(monoImage,sampler)
 		monoBlocks := ImageToBlocks(monoImage)
 		mono := ApplyCurve(monoBlocks, curve)
 
